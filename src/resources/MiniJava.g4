@@ -69,35 +69,58 @@ type
 
 statement
     :   '{' statement* '}'
+    # nestedStat
     |   'if' '(' expression ')'
             statement
         'else'
             statement
+    # ifElseStat
     |   'while' '(' expression ')'
             statement
+    # whileStat
     |   'System.out.println' '(' expression ')' ';'
+    # printStat
     |   Identifier '=' expression ';'
+    # assignStat
     |   Identifier '[' expression ']' '=' expression ';'
+    # arrayAssignStat
     ;
 
 expression
     :   expression '+'  expression
+    # addExp
     |   expression '-'  expression
+    # subExp
     |   expression '*'  expression
+    # mulExp
     |   expression '<'  expression
+    # ltExp 
     |   expression '&&' expression
+    # andExp
     |   expression '[' expression ']'
+    # arrayAccessExp
     |   expression '.' 'length'
+    # arrayLengthExp
     |   expression '.' Identifier '(' (expression (',' expression)*)? ')'
+    # methodCallExp
     |   INT
+    # intLitExp
     |   BOOL
+    # booleanLitExp
     |   Identifier
+    # identifierExp
     |   'this'
+    # thisExp
     |   '-' expression
+    # negExp
     |   '!' expression
+    # notExp
     |   '(' expression ')'
+    # parenExp
     |   'new' 'int' '[' expression ']'
+    # arrayInstantiationExp
     |   'new' Identifier '(' ')'
+    # objectInstantiationExp
     ;
 
 INT
