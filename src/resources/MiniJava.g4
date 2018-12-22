@@ -44,7 +44,17 @@ varDeclaration
     ;
 
 methodDeclaration
-    :   'public' type Identifier paramList
+    :  ('public' type Identifier paramList
+        /* illegal method declarations */
+        |          type Identifier paramList
+            {notifyErrorListeners("method declaration without public");}
+        | 'public'      Identifier paramList
+            {notifyErrorListeners("method declaration without return type");}
+        | 'public' type    paramList
+            {notifyErrorListeners("method declaration without method name");}
+        | 'public' type Identifier
+            {notifyErrorListeners("method declaration without param list");}
+        )
         methodBody
     ;
 
@@ -52,7 +62,10 @@ methodBody
     :   '{'
         varDeclaration* 
         statement*
-        'return' expression ';'
+        ('return' expression ';'
+        /* illegal method without return */
+        | 
+        {notifyErrorListeners("method body without return");})
         '}'
     ;
 
@@ -61,10 +74,12 @@ paramList
     ;
 
 type   
-    :   'int' '[' ']'
+    :   (('int' '[' ']'
     |	'boolean'
     |	'int'
-    |	Identifier
+    |	Identifier)
+        |
+        {notifyErrorListeners("invalid type");})
     ;
 
 statement
@@ -94,7 +109,7 @@ expression
     |   expression '*'  expression
     # mulExp
     |   expression '<'  expression
-    # ltExp 
+    # ltExp
     |   expression '&&' expression
     # andExp
     |   expression '[' expression ']'
@@ -124,7 +139,7 @@ expression
     ;
 
 INT
-    :   ('0' | [1-9][0-9]*) 
+    :   ('0' | [1-9][0-9]*)
     ;
 
 BOOL
