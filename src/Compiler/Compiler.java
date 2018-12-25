@@ -1,3 +1,4 @@
+import java.io.*;
 import java.util.Arrays;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -9,9 +10,11 @@ import org.antlr.v4.gui.TreeViewer;
 
 import MiniJava.*;
 
-
+// MiniJava 编译器的实现
 public class Compiler{
+
     // 自定错误提示
+    // ParserError
     public static class MyMiniJavaParserErrorListener extends BaseErrorListener {
         @Override
         public void syntaxError(Recognizer<?, ?> recognizer,
@@ -66,6 +69,8 @@ public class Compiler{
         }
     }
 
+    // 自定错误提示
+    // LexerError
     public static class MyMiniJavaLexerErrorListener extends BaseErrorListener {
         @Override
         public void syntaxError(Recognizer<?, ?> recognizer,
@@ -114,11 +119,22 @@ public class Compiler{
         }
     }
 
+    //inputFile: 将要进行编译分析的文件路径
+    private static String inputFile = null;
 
     public static void main(String[] args) throws Exception {
 
-        // 输入
-        ANTLRInputStream input = new ANTLRInputStream(System.in);
+        // 目标文件输入流
+        InputStream fstream = null;
+
+        // 获取目标文件的路径
+        if(args.length > 0){
+            System.out.println(args[0]);
+            inputFile = args[0];
+            fstream = new FileInputStream(inputFile);
+        }
+
+        ANTLRInputStream input = new ANTLRInputStream(fstream);
 
         // 进行语法分析和词法分析
         MiniJavaLexer lexer = new MiniJavaLexer(input);
