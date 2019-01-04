@@ -8,6 +8,15 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 import org.antlr.v4.gui.TreeViewer;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.misc.NotNull;
+import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.TerminalNode;
+
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTreeProperty;
+import java.util.*;
+
 import MiniJava.*;
 
 // MiniJava 编译器的实现
@@ -119,22 +128,66 @@ public class Compiler{
         }
     }
     
-    /** // Syntax Analysis
-     private static class MyMniJavaSyntaxAnalysis{
-     
-     // 对语法树进行深度优先遍历，检查语义错误包括：
-     // 1. 标示符未定义
-     //
-     public void ScopeCheck(ParseTree tree, String activeVars[]){
-     // 如果没有子节点
-     if(tree.getchild() == null){
-     return;
-     }
-     String localVars[];
-     for
-     
-     }
-     }*/
+    
+    
+    public static class myMiniJavaListener extends MiniJavaBaseListener {
+        
+        //private Queue<String> SymbolTable = new Queue<>();
+        
+        @Override public void enterGoal(MiniJavaParser.GoalContext ctx) { }
+        @Override public void enterMainClass(MiniJavaParser.MainClassContext ctx) { System.out.println(ctx.Identifier().getText());  }
+        @Override public void enterMainClassBody(MiniJavaParser.MainClassBodyContext ctx) { }
+        @Override public void enterMainMethodDeclaration(MiniJavaParser.MainMethodDeclarationContext ctx) { System.out.println(ctx.Identifier().getText()); }
+        
+        @Override public void enterClassDeclaration(MiniJavaParser.ClassDeclarationContext ctx) {
+            for(int i = 0; ctx.Identifier(i) != null; i++){
+                System.out.println(ctx.Identifier(0).getText());
+            }
+        }
+        
+        @Override public void enterClassBody(MiniJavaParser.ClassBodyContext ctx) { }
+        @Override public void enterVarDeclaration(MiniJavaParser.VarDeclarationContext ctx) { System.out.println(ctx.Identifier().getText()); }
+        @Override public void enterMethodDeclaration(MiniJavaParser.MethodDeclarationContext ctx) { System.out.println(ctx.Identifier().getText());}
+        @Override public void enterMethodBody(MiniJavaParser.MethodBodyContext ctx) { }
+        
+        @Override public void enterParamList(MiniJavaParser.ParamListContext ctx) {
+            for(int i = 0; ctx.Identifier(i) != null; i++){
+                System.out.println(ctx.Identifier(0).getText());
+            }
+        }
+        
+        @Override public void enterType(MiniJavaParser.TypeContext ctx) {
+            if(ctx.Identifier()!=null)
+                System.out.println(ctx.Identifier().getText());
+        }
+        
+        @Override public void enterNestedStat(MiniJavaParser.NestedStatContext ctx) { }
+        @Override public void enterIfElseStat(MiniJavaParser.IfElseStatContext ctx) { }
+        @Override public void enterWhileStat(MiniJavaParser.WhileStatContext ctx) { }
+        @Override public void enterPrintStat(MiniJavaParser.PrintStatContext ctx) { }
+        @Override public void enterAssignStat(MiniJavaParser.AssignStatContext ctx) { System.out.println(ctx.Identifier().getText()); }
+        @Override public void enterArrayAssignStat(MiniJavaParser.ArrayAssignStatContext ctx) { System.out.println(ctx.Identifier().getText()); }
+        @Override public void enterIdentifierExp(MiniJavaParser.IdentifierExpContext ctx) { System.out.println(ctx.Identifier().getText()); }
+        @Override public void enterAndExp(MiniJavaParser.AndExpContext ctx) { }
+        @Override public void enterIntLitExp(MiniJavaParser.IntLitExpContext ctx) { }
+        @Override public void enterSubExp(MiniJavaParser.SubExpContext ctx) {}
+        @Override public void enterAddExp(MiniJavaParser.AddExpContext ctx) {}
+        @Override public void enterArrayInstantiationExp(MiniJavaParser.ArrayInstantiationExpContext ctx) {}
+        @Override public void enterNotExp(MiniJavaParser.NotExpContext ctx) {}
+        @Override public void enterBooleanLitExp(MiniJavaParser.BooleanLitExpContext ctx) {}
+        @Override public void enterLtExp(MiniJavaParser.LtExpContext ctx){}
+        @Override public void enterThisExp(MiniJavaParser.ThisExpContext ctx) {}
+        @Override public void enterNegExp(MiniJavaParser.NegExpContext ctx) {}
+        @Override public void enterParenExp(MiniJavaParser.ParenExpContext ctx) {}
+        @Override public void enterObjectInstantiationExp(MiniJavaParser.ObjectInstantiationExpContext ctx) {System.out.println(ctx.Identifier().getText());}
+        @Override public void enterArrayLengthExp(MiniJavaParser.ArrayLengthExpContext ctx) {}
+        @Override public void enterMulExp(MiniJavaParser.MulExpContext ctx) {}
+        @Override public void enterMethodCallExp(MiniJavaParser.MethodCallExpContext ctx) { System.out.println(ctx.Identifier().getText());}
+        @Override public void enterArrayAccessExp(MiniJavaParser.ArrayAccessExpContext ctx) {}
+        @Override public void enterEveryRule(ParserRuleContext ctx) {}
+    }
+    
+    
     
     //inputFile: 将要进行编译分析的文件路径
     private static String inputFile = null;
@@ -170,6 +223,11 @@ public class Compiler{
         
         // 生成parse tree
         ParseTree tree = parser.goal();
+        
+        //
+        myMiniJavaListener listener = new myMiniJavaListener();
+        ParseTreeWalker.DEFAULT.walk(listener, tree);
+        
         // 以字符串形式输出树
         System.out.println("---------------------Output AST--------------------");
         System.out.println("MiniJava AST in string mode:");
