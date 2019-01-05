@@ -132,43 +132,216 @@ public class Compiler{
     
     public static class myMiniJavaListener extends MiniJavaBaseListener {
         
-        //private Queue<String> SymbolTable = new Queue<>();
+        ArrayList<String[]> symbolTable = new ArrayList();
         
-        @Override public void enterGoal(MiniJavaParser.GoalContext ctx) { }
-        @Override public void enterMainClass(MiniJavaParser.MainClassContext ctx) { System.out.println(ctx.Identifier().getText());  }
-        @Override public void enterMainClassBody(MiniJavaParser.MainClassBodyContext ctx) { }
-        @Override public void enterMainMethodDeclaration(MiniJavaParser.MainMethodDeclarationContext ctx) { System.out.println(ctx.Identifier().getText()); }
+        int currScope = 0;
+        String type = "0";
+        String name = "0";
+        String[] curr = {"0", "0", "0"};
         
-        @Override public void enterClassDeclaration(MiniJavaParser.ClassDeclarationContext ctx) {
-            for(int i = 0; ctx.Identifier(i) != null; i++){
-                System.out.println(ctx.Identifier(0).getText());
+        // 插入新符号
+        protected void insertTable(String curType, String curName){
+            
+            String curScope = currScope + "";
+            symbolTable.add(new String[]{curScope, curType, curName});
+            
+        }
+        
+        // 退出域后，删除当前域的所有符号
+        protected void deleteTable(){
+            String target = currScope + "";
+            for(int i = 0; i < symbolTable.size(); i++){
+                curr = symbolTable.get(i);
+                if(target.equals(curr)){
+                    symbolTable.remove(curr);
+                }
             }
         }
         
-        @Override public void enterClassBody(MiniJavaParser.ClassBodyContext ctx) { }
-        @Override public void enterVarDeclaration(MiniJavaParser.VarDeclarationContext ctx) { System.out.println(ctx.Identifier().getText()); }
-        @Override public void enterMethodDeclaration(MiniJavaParser.MethodDeclarationContext ctx) { System.out.println(ctx.Identifier().getText());}
-        @Override public void enterMethodBody(MiniJavaParser.MethodBodyContext ctx) { }
+        // 查找符号表的记录
+        protected Boolean findSymbol(String _type, String _name){
+            
+            int _scope = 0;
+            
+            if(_type == null){
+                for(int i = 0; i < symbolTable.size(); i++){
+                    _scope = Integer.parseInt(symbolTable.get(i)[0]);
+                    if(_scope <= currScope){
+                        // 符号表中有记录
+                        if(_name.equals(symbolTable.get(i)[2]))
+                            return true;
+                    }
+                }
+            }else{
+                for(int i = 0; i < symbolTable.size(); i++){
+                    _scope = Integer.parseInt(symbolTable.get(i)[0]);
+                    if(_scope <= currScope){
+                        // 符号表中有记录
+                        if(symbolTable.get(i)[1] == _type && symbolTable.get(i)[2] == _name)
+                            return true;
+                    }
+                }
+            }
+            // 符号表中没有找到记录
+            return false;
+        }
         
+        // GOAL
+        @Override public void enterGoal(MiniJavaParser.GoalContext ctx) { }
+        @Override public void exitGoal(MiniJavaParser.GoalContext ctx) { }
+        
+        // MAINCLASS
+        @Override public void enterMainClass(MiniJavaParser.MainClassContext ctx) {
+            currScope ++;
+            type = "MainClass";
+            name = ctx.Identifier().getText();
+            insertTable(type, name);
+        }
+        @Override public void exitMainClass(MiniJavaParser.MainClassContext ctx) {
+            // deleteTable();
+            currScope--;
+        }
+        
+        // MainClassBody
+        @Override public void enterMainClassBody(MiniJavaParser.MainClassBodyContext ctx) { }
+        @Override public void exitMainClassBody(MiniJavaParser.MainClassBodyContext ctx) { }
+        
+        // MainMethodDeclaration
+        @Override public void enterMainMethodDeclaration(MiniJavaParser.MainMethodDeclarationContext ctx) {
+            currScope ++;
+            type = "String";
+            name = ctx.Identifier().getText();
+            insertTable(type, name);
+        }
+        @Override public void exitMainMethodDeclaration(MiniJavaParser.MainMethodDeclarationContext ctx) {
+            // deleteTable();
+            currScope--;
+        }
+        
+        // ClassDeclaration
+        @Override public void enterClassDeclaration(MiniJavaParser.ClassDeclarationContext ctx) {
+            currScope++;
+            type = "Class";
+            // TODO: 检查第二个类是否存在或正确
+            // 添加类
+            if(ctx.Identifier(1) != null){
+                name = ctx.Identifier(1).getText();
+                insertTable(type, name);
+            }
+        }
+        @Override public void exitClassDeclaration(MiniJavaParser.ClassDeclarationContext ctx) {
+            // deleteTable();
+            currScope--;
+        }
+        
+        // ClassBody
+        @Override public void enterClassBody(MiniJavaParser.ClassBodyContext ctx) { }
+        @Override public void exitClassBody(MiniJavaParser.ClassBodyContext ctx) { }
+        
+        // VarDeclaration
+        // 变量的初始化
+        @Override public void enterVarDeclaration(MiniJavaParser.VarDeclarationContext ctx) {
+            type = ctx.type().getText();
+            name = ctx.Identifier().getText();
+            insertTable(type, name);
+        }
+        @Override public void exitVarDeclaration(MiniJavaParser.VarDeclarationContext ctx) {}
+        
+        // MethodDeclaration
+        @Override public void enterMethodDeclaration(MiniJavaParser.MethodDeclarationContext ctx) {
+            currScope++;
+            type = "Method";
+            name = ctx.Identifier().getText();
+            insertTable(type, name);
+        }
+        @Override public void exitMethodDeclaration(MiniJavaParser.MethodDeclarationContext ctx) {
+            //deleteTable();
+            currScope--;
+        }
+        
+        // MethodBody
+        @Override public void enterMethodBody(MiniJavaParser.MethodBodyContext ctx) { }
+        @Override public void exitMethodBody(MiniJavaParser.MethodBodyContext ctx) { }
+        
+        // ParamList
         @Override public void enterParamList(MiniJavaParser.ParamListContext ctx) {
             for(int i = 0; ctx.Identifier(i) != null; i++){
-                System.out.println(ctx.Identifier(0).getText());
+                name = ctx.Identifier(i).getText();
+                type = ctx.type(i).getText();
+                insertTable(type, name);
+            }
+        }
+        @Override public void exitParamList(MiniJavaParser.ParamListContext ctx) { }
+        
+        // type
+        @Override public void enterType(MiniJavaParser.TypeContext ctx) {
+            // typecheck
+            String _name;
+            if(ctx.Identifier() != null){
+                _name = ctx.Identifier().getText();
+                if(findSymbol("Class", _name) == false){
+                    // System.out.println("");
+                    // System.out.println("Syntax Error: Class '" + _name + "' is not defined");
+                }
             }
         }
         
-        @Override public void enterType(MiniJavaParser.TypeContext ctx) {
-            if(ctx.Identifier()!=null)
-                System.out.println(ctx.Identifier().getText());
+        /** statement */
+        // Nested
+        @Override public void enterNestedStat(MiniJavaParser.NestedStatContext ctx) { }
+        @Override public void exitNestedStat(MiniJavaParser.NestedStatContext ctx) { }
+        
+        // IfElse
+        @Override public void enterIfElseStat(MiniJavaParser.IfElseStatContext ctx) { }
+        @Override public void exitIfElseStat(MiniJavaParser.IfElseStatContext ctx) { }
+        
+        // While
+        @Override public void enterWhileStat(MiniJavaParser.WhileStatContext ctx) { }
+        @Override public void exitWhileStat(MiniJavaParser.WhileStatContext ctx) { }
+        
+        // Print
+        @Override public void enterPrintStat(MiniJavaParser.PrintStatContext ctx) { }
+        @Override public void exitPrintStat(MiniJavaParser.PrintStatContext ctx) { }
+        
+        // Assign
+        @Override public void enterAssignStat(MiniJavaParser.AssignStatContext ctx) {
+            String _name;
+            String _type;
+            
+            if(ctx.Identifier() != null){
+                _name = ctx.Identifier().getText();
+                if(findSymbol(null, _name) == false){
+                    System.out.println("");
+                    System.out.println("Syntax Error: Identifier '" + _name + "' is not defined");
+                }
+            }
+        }
+        @Override public void exitAssignStat(MiniJavaParser.AssignStatContext ctx) { }
+        
+        /** exprssion */
+        // Array
+        @Override public void enterArrayAssignStat(MiniJavaParser.ArrayAssignStatContext ctx) {
+            String _name;
+            String _type;
+            
+            if(ctx.Identifier() != null){
+                _name = ctx.Identifier().getText();
+                if(findSymbol(null, _name) == false){
+                    System.out.println("");
+                    System.out.println("Syntax Error: Array Identifier '" + _name + "' is not defined");
+                }
+            }
+        }
+        @Override public void exitArrayAssignStat(MiniJavaParser.ArrayAssignStatContext ctx) {
+            
         }
         
-        @Override public void enterNestedStat(MiniJavaParser.NestedStatContext ctx) { }
-        @Override public void enterIfElseStat(MiniJavaParser.IfElseStatContext ctx) { }
-        @Override public void enterWhileStat(MiniJavaParser.WhileStatContext ctx) { }
-        @Override public void enterPrintStat(MiniJavaParser.PrintStatContext ctx) { }
-        @Override public void enterAssignStat(MiniJavaParser.AssignStatContext ctx) { System.out.println(ctx.Identifier().getText()); }
-        @Override public void enterArrayAssignStat(MiniJavaParser.ArrayAssignStatContext ctx) { System.out.println(ctx.Identifier().getText()); }
-        @Override public void enterIdentifierExp(MiniJavaParser.IdentifierExpContext ctx) { System.out.println(ctx.Identifier().getText()); }
-        @Override public void enterAndExp(MiniJavaParser.AndExpContext ctx) { }
+        // Identifier
+        @Override public void enterIdentifierExp(MiniJavaParser.IdentifierExpContext ctx){
+            // todo:是否声明标识符
+        }
+        
+        @Override public void enterAndExp(MiniJavaParser.AndExpContext ctx) {}
         @Override public void enterIntLitExp(MiniJavaParser.IntLitExpContext ctx) { }
         @Override public void enterSubExp(MiniJavaParser.SubExpContext ctx) {}
         @Override public void enterAddExp(MiniJavaParser.AddExpContext ctx) {}
@@ -179,11 +352,31 @@ public class Compiler{
         @Override public void enterThisExp(MiniJavaParser.ThisExpContext ctx) {}
         @Override public void enterNegExp(MiniJavaParser.NegExpContext ctx) {}
         @Override public void enterParenExp(MiniJavaParser.ParenExpContext ctx) {}
-        @Override public void enterObjectInstantiationExp(MiniJavaParser.ObjectInstantiationExpContext ctx) {System.out.println(ctx.Identifier().getText());}
+        
+        @Override public void enterObjectInstantiationExp(MiniJavaParser.ObjectInstantiationExpContext ctx) {
+            String _name;
+            if(ctx.Identifier() != null){
+                _name = ctx.Identifier().getText();
+                if(findSymbol("Class", _name) == false){
+                    // System.out.println("");
+                    // System.out.println("Syntax Error: Class '" + _name + "' is not defined");
+                }
+            }
+        }
         @Override public void enterArrayLengthExp(MiniJavaParser.ArrayLengthExpContext ctx) {}
         @Override public void enterMulExp(MiniJavaParser.MulExpContext ctx) {}
-        @Override public void enterMethodCallExp(MiniJavaParser.MethodCallExpContext ctx) { System.out.println(ctx.Identifier().getText());}
+        @Override public void enterMethodCallExp(MiniJavaParser.MethodCallExpContext ctx) {
+            String _name;
+            if(ctx.Identifier() != null){
+                _name = ctx.Identifier().getText();
+                if(findSymbol("Method", _name) == false){
+                    // System.out.println("");
+                    // System.out.println("Syntax Error: Cannot Find Method '" + _name + "'.");
+                }
+            }
+        }
         @Override public void enterArrayAccessExp(MiniJavaParser.ArrayAccessExpContext ctx) {}
+        
         @Override public void enterEveryRule(ParserRuleContext ctx) {}
     }
     
@@ -199,7 +392,6 @@ public class Compiler{
         
         // 获取目标文件的路径
         if(args.length > 0){
-            System.out.println(args[0]);
             inputFile = args[0];
             fstream = new FileInputStream(inputFile);
         }
@@ -229,6 +421,7 @@ public class Compiler{
         ParseTreeWalker.DEFAULT.walk(listener, tree);
         
         // 以字符串形式输出树
+        System.out.println("");
         System.out.println("---------------------Output AST--------------------");
         System.out.println("MiniJava AST in string mode:");
         System.out.println(tree.toStringTree());
