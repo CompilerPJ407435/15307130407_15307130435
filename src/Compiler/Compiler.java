@@ -312,7 +312,7 @@ public class Compiler{
                 _name = ctx.Identifier().getText();
                 if(findSymbol(null, _name) == false){
                     System.out.println("");
-                    System.out.println("Syntax Error: Identifier '" + _name + "' is not defined");
+                    System.out.println("Semantic Error!\nError Description: Identifier '" + _name + "' is not defined");
                 }
             }
         }
@@ -328,7 +328,7 @@ public class Compiler{
                 _name = ctx.Identifier().getText();
                 if(findSymbol(null, _name) == false){
                     System.out.println("");
-                    System.out.println("Syntax Error: Array Identifier '" + _name + "' is not defined");
+                    System.out.println("Semantic Error!\nError Description: Identifier '" + _name + "' is not defined");
                 }
             }
         }
